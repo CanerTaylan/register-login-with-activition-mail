@@ -2,6 +2,13 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
 from django.contrib import messages
+from django.conf import settings
+from django.core.mail import send_mail
+from django.contrib.sites.shortcuts import get_current_site
+from django.template.loader import render_to_string
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes
+from django.contrib.auth.tokens import default_token_generator
 
 
 
@@ -15,10 +22,10 @@ def index(request):
 
 def Register(request):
     if request.method == "POST":
-        username = request.POST.get("username")
+        username = request.POST.get("username").lower()
         name = request.POST.get("name")
         surname = request.POST.get("surname")
-        email = request.POST.get("email")
+        email = request.POST.get("email").lower()
         password1 = request.POST.get("password1")
         password2 = request.POST.get("password2")
 
@@ -40,6 +47,8 @@ def Register(request):
                             email=email,
                             password=password1)
                         user.save()
+                        send_activation_email(request, user)
+
                         return redirect("Login")
                     else:
                         messages.warning(request, "Bu E-mail adresi kullanılıyor !!!")
@@ -49,10 +58,10 @@ def Register(request):
                     hata = "username"
             else :
                 messages.warning(request, "Şifreniz büyük harf ve sayı içermesi gerekmektedir !!!")
-                hata = "passworda"
+                hata = "password"
         else :
             messages.warning(request, "Şifreler eşleşmiyor !!!")
-            hata = "passwordb"
+            hata = "password"
         
         context ={}
         if hata == "email":
@@ -69,15 +78,7 @@ def Register(request):
                 "email":email,
                 "hata":hata,
             })
-        elif hata == "passworda":
-            context.update({
-                "username":username,
-                "name":name,
-                "surname":surname,
-                "email":email,
-                "hata":hata,
-            })
-        elif hata == "passwordb":
+        elif hata == "password":
             context.update({
                 "username":username,
                 "name":name,
@@ -89,8 +90,38 @@ def Register(request):
     context={}
     return render(request, 'register.html',context)
 
+def send_activation_email(request,user):
+    current_site = get_current_site(request)
+    mail_subject = 'Hesabınızı Aktifleştirin'
+    message = render_to_string('mail/activation_email.html', {
+        'user': user,
+        'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+        'token': default_token_generator.make_token(user),
+        'domain': current_site.domain,
+    })
+    send_mail(mail_subject, '', settings.EMAIL_HOST_USER, [user.email], html_message=message)
+
+
+def activate_account(request, uidb64, token):
+    try:
+        uid = force_bytes(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+
+    if user is not None and default_token_generator.check_token(user, token):
+        user.is_active = True
+        user.save()
+        messages.success(request, 'Hesabınız başarıyla aktifleştirildi. Giriş yapabilirsiniz.')
+        return redirect('Login')
+    else:
+        messages.error(request, 'Geçersiz aktivasyon bağlantısı.')
+        return redirect('activation_failure')
+    
+
 
 def Login(request):
+    hata = ""
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
@@ -102,10 +133,10 @@ def Login(request):
             messages.success(request, "Giriş başarılı,\n{} {}".format(request.user.first_name, request.user.last_name))
             return redirect('Index')
         else:
-            messages.warning(request, "Kullanıcı adı veya şifre yanlış !!!")
-            return redirect('Login')
-    
-    return render(request, "login.html")
+            messages.warning(request, "Kullanıcı adı veya " + '\nşifre yanlış !!!')
+            hata = "user-password"
+    context ={"hata":hata}
+    return render(request, "login.html", context)
 
 
 

@@ -7,6 +7,8 @@
     <title>Login</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/login.css' %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
 </head>
 
 <body>
@@ -19,7 +21,7 @@
     </div>
     {% endif %}
     {% if i.tags == "warning" %}
-    <div class="alert alert-danger alert-dismissible fade show fw-bold" role="alert" 
+    <div class="alert alert-danger alert-dismissible fade show fw-bold" role="alert"
         style="position: fixed; bottom: 90px; left: 90px; z-index: 99; min-width: 350px !important; width: fit-content;">
         {{ i }}
         <hr>
@@ -31,22 +33,27 @@
 
     {% endfor %}
     <main class="form-login w-100 m-auto">
+        <div class="text-center">
+            <img class="mb-4 ms-4" src="{% static 'images/login.png' %}" height="150">
+            
+        </div>
+        
         <form method="POST">
             {% csrf_token %}
-            <div class="text-center">
-                <img class="mb-4 ms-4" src="{% static 'images/login.png' %}" height="150">
-
-            </div>
-
             <div class="form-floating">
-                <input name="username" type="text" class="form-control" id="floatingInput"
+                <input name="username" type="text" class="form-control {% if hata == 'user-password' %} is-invalid {% endif %}" id="inputUsername"
                     placeholder="Kullanıcı adınız">
-                <label for="floatingInput">Kullanıcı Adınız</label>
+                <label for="inputUsername">Kullanıcı Adınız</label>
             </div>
             <div class="form-floating">
-                <input name="password" type="password" class="form-control" id="floatingPassword"
-                    placeholder="Password">
-                <label for="floatingPassword">Şifreniz</label>
+                <input name="password" type="password" class="form-control {% if hata == 'user-password' %} is-invalid {% endif %}" id="inputPassword" placeholder="Password">
+                <label for="inputPassword">Şifreniz</label>
+                <i class="bi bi-eye text-dark fs-4"
+                    style="position: absolute; top: 20%; right: 30px; cursor: pointer; display: none;"
+                    onclick="showPword('inputPassword', 'bi-eye', 'bi-eye-slash')" id="bi-eye"></i>
+                <i class="bi bi-eye-slash text-dark fs-4"
+                    style="position: absolute; top: 20%; right: 30px; cursor: pointer;"
+                    onclick="showPword('inputPassword', 'bi-eye', 'bi-eye-slash')" id="bi-eye-slash"></i>
             </div>
 
 
