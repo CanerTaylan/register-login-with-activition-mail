@@ -27,6 +27,7 @@ urlpatterns = [
     path('login.html',Login , name='Login'),
     path('logout.html',Logout , name='Logout'),
     path('activate/<str:uidb64>/<str:token>/', activate_account, name='activate_account'),
-
+    path('forgotpassword.html',ForgotPassword , name='ForgotPassword'),
+    path('renew_password/<str:uidb64>/<str:token>/', RenewPassword, name='RenewPassword'),
 
 ] +static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)
